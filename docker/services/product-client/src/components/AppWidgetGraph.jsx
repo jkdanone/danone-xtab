@@ -3389,6 +3389,7 @@ class AppWidgetGraph extends React.Component {
             ?.map((el) => el.options.filter((el) => el.selected))
             .flat();
         let table_data, table_headers;
+       
         if (this.props?.data?.data?.value) {
             const { value } = this.props.data.data;
             if (value?.table_data && value?.table_headers) {
@@ -3414,6 +3415,7 @@ class AppWidgetGraph extends React.Component {
                 }
             }
         }
+        
         const areColumnsSelected = selectedCheckColumn.size > 0;
         const { value } = this.props.data.data;
         const filteredData =
@@ -3430,12 +3432,13 @@ class AppWidgetGraph extends React.Component {
                       } else if (value?.tableProps) {
                           filteredRow = table_headers?.reduce((acc, header, colIndex) => {
                               if (!areColumnsSelected || selectedCheckColumn?.has(colIndex)) {
-                                  acc[header] = row[header] !== undefined ? row[header] : 'N/A';
+                                  acc[header] = row[colIndex] !== undefined ? row[colIndex] : 'N/A';
                               }
                               return acc;
                           }, {});
                       } else if (value?.columns && value?.rows) {
                           filteredRow = table_headers?.reduce((acc, header, colIndex) => {
+                            
                               if (!areColumnsSelected || selectedCheckColumn.has(colIndex)) {
                                   acc[header] = row[header] !== undefined ? row[header] : 'N/A';
                               }
@@ -4202,6 +4205,9 @@ class AppWidgetGraph extends React.Component {
                                                         this.isCodxTable(this.state.data) ||
                                                         this.isGridTable(this.state.data)
                                                     }
+                                                    app_screen_widget_id={this.props.details.id}
+                                                app_id={this.props.app_id}
+                                                app_screen_id={this.props.screen_id}
                                                 />
                                             </SelectedIndexProvider>
                                         </div>
