@@ -3417,39 +3417,40 @@ class AppWidgetGraph extends React.Component {
         const areColumnsSelected = selectedCheckColumn.size > 0;
         const { value } = this.props.data.data;
         const filteredData =
-            table_data && table_data.length > 0
-                ? table_data.map((row) => {
-                      let filteredRow = {};
-                      if (value?.table_data && value?.table_headers) {
-                          filteredRow = table_headers?.reduce((acc, header, colIndex) => {
-                              if (!areColumnsSelected || selectedCheckColumn?.has(header)) {
-                                  acc[header] = row[colIndex] !== undefined ? row[colIndex] : 'N/A';
-                              }
-                              return acc;
-                          }, {});
-                      } else if (value?.tableProps) {
-                          filteredRow = table_headers?.reduce((acc, header, colIndex) => {
-                              if (!areColumnsSelected || selectedCheckColumn?.has(colIndex)) {
-                                  acc[header] = row[header] !== undefined ? row[header] : 'N/A';
-                              }
-                              return acc;
-                          }, {});
-                      } else if (value?.columns && value?.rows) {
-                          filteredRow = table_headers?.reduce((acc, header, colIndex) => {
-                              if (!areColumnsSelected || selectedCheckColumn.has(colIndex)) {
-                                  acc[header] = row[header] !== undefined ? row[header] : 'N/A';
-                              }
-                              return acc;
-                          }, {});
-                      }
-                      return filteredRow;
-                  })
-                : [
-                      table_headers?.reduce((acc, header) => {
-                          acc[header] = 'N/A';
+        table_data && table_data.length > 0
+            ? table_data.map((row) => {
+                  let filteredRow = {};
+                  if (value?.table_data && value?.table_headers) {
+                      filteredRow = table_headers?.reduce((acc, header, colIndex) => {
+                          if (!areColumnsSelected || selectedCheckColumn?.has(header)) {
+                              acc[header] = row[colIndex] !== undefined ? row[colIndex] : 'N/A';
+                          }
                           return acc;
-                      }, {})
-                  ];
+                      }, {});
+                  } else if (value?.tableProps) {
+                      filteredRow = table_headers?.reduce((acc, header, colIndex) => {
+                          if (!areColumnsSelected || selectedCheckColumn?.has(colIndex)) {
+                              acc[header] = row[colIndex] !== undefined ? row[colIndex] : 'N/A';
+                          }
+                          return acc;
+                      }, {});
+                  } else if (value?.columns && value?.rows) {
+                      filteredRow = table_headers?.reduce((acc, header, colIndex) => {
+                       
+                          if (!areColumnsSelected || selectedCheckColumn.has(colIndex)) {
+                              acc[header] = row[header] !== undefined ? row[header] : 'N/A';
+                          }
+                          return acc;
+                      }, {});
+                  }
+                  return filteredRow;
+              })
+            : [
+                  table_headers?.reduce((acc, header) => {
+                      acc[header] = 'N/A';
+                      return acc;
+                  }, {})
+              ];
 
         let getTableData;
         if (value) {
