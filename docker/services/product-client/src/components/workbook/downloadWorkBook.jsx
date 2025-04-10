@@ -10,6 +10,7 @@ import * as htmlToImage from 'html-to-image';
 import { SelectedIndexContext } from 'context/SelectedIndexContext';
 import { Button, Checkbox, Paper, FormControlLabel, RadioGroup, Radio } from '@material-ui/core';
 import { IconButton, Tooltip } from '@material-ui/core';
+import { triggerWidgetActionHandler } from 'services/widget.js';
 
 const useStyles = makeStyles((theme) => ({
     downloadWorkbook: {
@@ -197,10 +198,12 @@ const useStyles = makeStyles((theme) => ({
  * @param {object} props - {tableData, filename }
  */
 
-export default function DownloadWorkBook({ tableData, filename, isLink, isButton, ...props }) {
+export default function DownloadWorkBook({ tableData,filename, isLink, isButton,app_screen_widget_id,app_id,app_screen_id, ...props }) {
     const classes = useStyles();
     const [isPaperVisible, setPaperVisible] = useState(false);
     const [fileType, setFileType] = useState('xlsx');
+    const [downloadType, setDownloadType] = useState('UIData');
+    const [tableContent, setTableContent] = useState(tableData);
     const [downloadSelected, setDownloadSelected] = useState(false);
     const [tableHeaders, setTableHeaders] = useState([]);
     const [parsedTableArray, setParsedTableArray] = useState([]);
@@ -216,7 +219,7 @@ export default function DownloadWorkBook({ tableData, filename, isLink, isButton
     };
 
     useEffect(() => {
-        const rawData = tableData?.table_data;
+        const rawData = tableContent?.table_data;
         document.addEventListener('mousedown', handleClickOutside);
 
         if (typeof rawData === 'string') {
@@ -238,7 +241,7 @@ export default function DownloadWorkBook({ tableData, filename, isLink, isButton
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [tableData, setSelectedCheckColumn]);
+    }, [tableContent, setSelectedCheckColumn]);
 
     const filteredData = parsedTableArray.map((row) => {
         let filteredRow = {};
@@ -260,17 +263,49 @@ export default function DownloadWorkBook({ tableData, filename, isLink, isButton
         }
     };
 
-    const downloadData = (fileName, selectedFileType) => {
+    const downloadData = async (fileName, selectedFileType) => {
         setDownloadSelected(!downloadSelected);
         const workbook = XLSX.utils.book_new();
         fileName = fileName || 'TableData';
 
         try {
-            if (selectedFileType === 'xlsx') {
+            if (selectedFileType === 'xlsx' && downloadType === 'UIData') {
                 const worksheet = XLSX.utils.json_to_sheet(filteredData);
                 XLSX.utils.book_append_sheet(workbook, worksheet, 'Filtered Data');
                 XLSX.writeFile(workbook, `${fileName}.xlsx`, { compression: true });
-            } else if (selectedFileType === 'csv') {
+            } 
+            
+            else if (selectedFileType === 'xlsx' && downloadType === 'allData')
+                {
+                    try {
+                        await triggerWidgetActionHandler({
+                            screen_id: app_screen_id,
+                            app_id:app_id,
+                            payload: {
+                                widget_value_id: app_screen_widget_id,
+                                action_type:"download_all_table_data",
+                                filters: JSON.parse(
+                                    sessionStorage.getItem(
+                                        'app_screen_filter_info_' +
+                                           app_id +
+                                            '_' +
+                                            app_screen_id
+                                    )
+                                )
+                            },
+                            callback: (d) => {
+                                setTableContent(d)
+
+                            }
+                        });
+                    } catch (err) {
+                        // handleLoaderChange(false);
+                    }
+                    const worksheet = XLSX.utils.json_to_sheet(filteredData);
+                    XLSX.utils.book_append_sheet(workbook, worksheet, 'Filtered Data');
+                    XLSX.writeFile(workbook, `${fileName}.xlsx`, { compression: true });
+                }
+            else if (selectedFileType === 'csv') {
                 const worksheet = XLSX.utils.json_to_sheet(filteredData);
                 const csvContent = XLSX.utils.sheet_to_csv(worksheet);
 
@@ -293,6 +328,9 @@ export default function DownloadWorkBook({ tableData, filename, isLink, isButton
     const handleFileTypeChange = (event) => {
         setFileType(event.target.value);
     };
+    const handleDownloadTypeChange = (event) => {
+        setDownloadType(event.target.value);
+    }
 
     const togglePaperVisibility = () => {
         setPaperVisible(!isPaperVisible);
@@ -418,10 +456,27 @@ export default function DownloadWorkBook({ tableData, filename, isLink, isButton
                                         label="Download as Excel"
                                         classes={{ label: classes.label }}
                                     />
-                                    <FormControlLabel
+                                    {/* <FormControlLabel
                                         value="csv"
                                         control={<Radio />}
                                         label="Download as CSV"
+                                        classes={{ label: classes.label }}
+                                    /> */}
+                                </RadioGroup>
+                            </div>
+                            <h3 className={classes.columnSelection}>Select Download Type:</h3>
+                            <div className={classes.radioGroupDiv}>
+                                <RadioGroup value={downloadType} onChange={handleDownloadTypeChange}>
+                                    <FormControlLabel
+                                        value="UIData"
+                                        control={<Radio />}
+                                        label="Download UI Data"
+                                        classes={{ label: classes.label }}
+                                    />
+                                    <FormControlLabel
+                                        value="allData"
+                                        control={<Radio />}
+                                        label="Download All Available Data"
                                         classes={{ label: classes.label }}
                                     />
                                 </RadioGroup>
