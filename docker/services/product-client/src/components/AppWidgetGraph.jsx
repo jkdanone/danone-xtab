@@ -4203,6 +4203,9 @@ class AppWidgetGraph extends React.Component {
                                                         this.isCodxTable(this.state.data) ||
                                                         this.isGridTable(this.state.data)
                                                     }
+                                                    app_screen_widget_id={this.props.details.id}
+                                                app_id={this.props.app_id}
+                                                app_screen_id={this.props.screen_id}
                                                 />
                                             </SelectedIndexProvider>
                                         </div>
