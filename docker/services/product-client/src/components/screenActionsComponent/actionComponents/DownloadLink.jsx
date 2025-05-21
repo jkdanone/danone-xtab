@@ -19,6 +19,7 @@ import sanitizeHtml from 'sanitize-html-react';
 import Tooltip from '@material-ui/core/Tooltip';
 import { CloudDownload } from '@material-ui/icons';
 import { CustomDialog } from '../../custom/CustomDialog';
+import * as XLSX from 'xlsx';
 
 const useStyles = makeStyles((theme) => ({
     icon: {
@@ -196,6 +197,36 @@ export function DownloadLink({
                 return error;
             });
     };
+    
+    const downloadExcelFromApiResponse = (apiResponse) => {
+        const workbook = XLSX.utils.book_new();
+      
+        Object.entries(apiResponse).forEach(([sheetName, raw]) => {
+          if (sheetName === "filename") return;
+      
+          try {
+            const parsed = JSON.parse(raw);
+            const rows = Object.keys(parsed)
+              .sort((a, b) => Number(a) - Number(b))
+              .map((rowKey) => {
+                const rowObj = parsed[rowKey];
+                return Object.keys(rowObj)
+                  .sort((a, b) => Number(a) - Number(b))
+                  .map((colKey) => rowObj[colKey]);
+              });
+      
+            const worksheet = XLSX.utils.aoa_to_sheet(rows);
+            XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+      
+          } catch (error) {
+            console.warn(`Skipping "${sheetName}" — invalid JSON`, error);
+          }
+        });
+      
+        const filename = apiResponse.filename || 'generated_report.xlsx';
+        XLSX.writeFile(workbook, filename);
+      };
+
 
     const handleDownloadClick = async () => {
         try {
@@ -215,7 +246,25 @@ export function DownloadLink({
                         )
                     },
                     callback: (d) => {
-                        downloadFile(d.url);
+                        
+                        const sheetLikeKeys = Object.entries(d).filter(([key, value]) => {
+                            if (key === 'filename') return false;
+                            try {
+                                const parsed = JSON.parse(value);
+                                return typeof parsed === 'object' && parsed !== null;
+                            } catch {
+                                return false;
+                            }
+                        });
+                        if (sheetLikeKeys.length > 0) {
+                            const responseWithFilename = {
+                                ...d,
+                                filename: d.filename || 'generated_report.xlsx'
+                            };
+                            downloadExcelFromApiResponse(responseWithFilename);
+                        } else {
+                            downloadFile(d.url);
+                        }
                     }
                 });
             } else {
